@@ -172,18 +172,19 @@ class TestReporter {
     console.log(`createResp.data.id: ${createResp.data.id}`);
     
 
-    let checks = await this.octokit.rest.checks.listForRef({
-      ...github.context.repo,
-      "ref":this.context.sha
-    });
+    // let checks = await this.octokit.rest.checks.listForRef({
+    //   ...github.context.repo,
+    //   "ref":this.context.sha
+    // });
 
-    let checkRun = checks.data.check_runs.find(c=> c.html_url?.includes(this.context.runId.toString()));     
-    core.info(`runId:${checkRun?.id}`);
-    core.info(`html_url:${checkRun?.html_url}`);    
+    // let checkRun = checks.data.check_runs.find(c=> c.html_url?.includes(this.context.runId.toString()));     
+    // core.info(`runId:${checkRun?.id}`);
+    // core.info(`html_url:${checkRun?.html_url}`);    
 
     core.info('Creating report summary')
     const {listSuites, listTests, onlySummary} = this
-    const baseUrl = checkRun?.html_url as string
+    // const baseUrl = checkRun?.html_url as string
+    const baseUrl = createResp.data.html_url as string;
     const summary = getReport(results, {listSuites, listTests, baseUrl, onlySummary})
 
     core.info('Creating annotations')
@@ -195,7 +196,7 @@ class TestReporter {
 
     core.info(`Updating check run conclusion (${conclusion}) and output`)
     const resp = await this.octokit.rest.checks.update({
-      check_run_id: checkRun?.id,
+      check_run_id: createResp.data.id,
       conclusion,
       status: 'completed',
       output: {
