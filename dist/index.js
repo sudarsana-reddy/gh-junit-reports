@@ -386,19 +386,12 @@ class TestReporter {
                 }
             }
             core.info(`Creating check run ${name}`);
-            // const createResp = await this.octokit.rest.checks.create({
-            //   head_sha: this.context.sha,
-            //   name,
-            //   status: 'in_progress',
-            //   output: {
-            //     title: name,
-            //     summary: ''
-            //   },
-            //   ...github.context.repo
-            // })
+            const createResp = yield this.octokit.rest.checks.create(Object.assign({ head_sha: this.context.sha, name, status: 'in_progress', output: {
+                    title: name,
+                    summary: ''
+                } }, github.context.repo));
+            console.log(`createResp.data.id: ${createResp.data.id}`);
             let checks = yield this.octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { "ref": this.context.sha }));
-            core.info(JSON.stringify(checks));
-            console.log(JSON.stringify(checks));
             let checkRun = checks.data.check_runs.find(c => { var _a; return (_a = c.html_url) === null || _a === void 0 ? void 0 : _a.includes(this.context.runId.toString()); });
             core.info(`runId:${checkRun === null || checkRun === void 0 ? void 0 : checkRun.id}`);
             core.info(`html_url:${checkRun === null || checkRun === void 0 ? void 0 : checkRun.html_url}`);

@@ -157,24 +157,25 @@ class TestReporter {
     }
 
     core.info(`Creating check run ${name}`)
-    // const createResp = await this.octokit.rest.checks.create({
-    //   head_sha: this.context.sha,
-    //   name,
-    //   status: 'in_progress',
-    //   output: {
-    //     title: name,
-    //     summary: ''
-    //   },
-    //   ...github.context.repo
-    // })
+    const createResp = await this.octokit.rest.checks.create({
+
+      head_sha: this.context.sha,
+      name,
+      status: 'in_progress',      
+      output: {
+        title: name,
+        summary: ''
+      },      
+      ...github.context.repo
+    })
+
+    console.log(`createResp.data.id: ${createResp.data.id}`);
+    
 
     let checks = await this.octokit.rest.checks.listForRef({
       ...github.context.repo,
       "ref":this.context.sha
     });
-
-    core.info(JSON.stringify(checks));
-    console.log(JSON.stringify(checks));
 
     let checkRun = checks.data.check_runs.find(c=> c.html_url?.includes(this.context.runId.toString()));     
     core.info(`runId:${checkRun?.id}`);
