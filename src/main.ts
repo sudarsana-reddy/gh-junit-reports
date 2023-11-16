@@ -157,20 +157,32 @@ class TestReporter {
     }
 
     core.info(`Creating check run ${name}`)
-    const createResp = await this.octokit.rest.checks.create({
-      head_sha: this.context.sha,
-      name,
-      status: 'in_progress',
-      output: {
-        title: name,
-        summary: ''
-      },
-      ...github.context.repo
-    })
+    // const createResp = await this.octokit.rest.checks.create({
+    //   head_sha: this.context.sha,
+    //   name,
+    //   status: 'in_progress',
+    //   output: {
+    //     title: name,
+    //     summary: ''
+    //   },
+    //   ...github.context.repo
+    // })
+
+    let checks = await this.octokit.rest.checks.listForRef({
+      ...github.context.repo,
+      "ref":this.context.sha
+    });
+
+    core.info(JSON.stringify(checks));
+    console.log(JSON.stringify(checks));
+
+    let checkRun = checks.data.check_runs.find(c=> c.html_url?.includes(this.context.runId.toString()));     
+    core.info(`runId:${checkRun?.id}`);
+    core.info(`html_url:${checkRun?.html_url}`);    
 
     core.info('Creating report summary')
     const {listSuites, listTests, onlySummary} = this
-    const baseUrl = createResp.data.html_url as string
+    const baseUrl = checkRun?.html_url as string
     const summary = getReport(results, {listSuites, listTests, baseUrl, onlySummary})
 
     core.info('Creating annotations')
@@ -178,11 +190,11 @@ class TestReporter {
 
     const isFailed = this.failOnError && results.some(tr => tr.result === 'failed')
     const conclusion = isFailed ? 'failure' : 'success'
-    const icon = isFailed ? Icon.fail : Icon.success
+    const icon = isFailed ? Icon.fail : Icon.success   
 
     core.info(`Updating check run conclusion (${conclusion}) and output`)
     const resp = await this.octokit.rest.checks.update({
-      check_run_id: createResp.data.id,
+      check_run_id: checkRun?.id,
       conclusion,
       status: 'completed',
       output: {

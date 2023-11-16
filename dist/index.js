@@ -386,13 +386,25 @@ class TestReporter {
                 }
             }
             core.info(`Creating check run ${name}`);
-            const createResp = yield this.octokit.rest.checks.create(Object.assign({ head_sha: this.context.sha, name, status: 'in_progress', output: {
-                    title: name,
-                    summary: ''
-                } }, github.context.repo));
+            // const createResp = await this.octokit.rest.checks.create({
+            //   head_sha: this.context.sha,
+            //   name,
+            //   status: 'in_progress',
+            //   output: {
+            //     title: name,
+            //     summary: ''
+            //   },
+            //   ...github.context.repo
+            // })
+            let checks = yield this.octokit.rest.checks.listForRef(Object.assign(Object.assign({}, github.context.repo), { "ref": this.context.sha }));
+            core.info(JSON.stringify(checks));
+            console.log(JSON.stringify(checks));
+            let checkRun = checks.data.check_runs.find(c => { var _a; return (_a = c.html_url) === null || _a === void 0 ? void 0 : _a.includes(this.context.runId.toString()); });
+            core.info(`runId:${checkRun === null || checkRun === void 0 ? void 0 : checkRun.id}`);
+            core.info(`html_url:${checkRun === null || checkRun === void 0 ? void 0 : checkRun.html_url}`);
             core.info('Creating report summary');
             const { listSuites, listTests, onlySummary } = this;
-            const baseUrl = createResp.data.html_url;
+            const baseUrl = checkRun === null || checkRun === void 0 ? void 0 : checkRun.html_url;
             const summary = (0, get_report_1.getReport)(results, { listSuites, listTests, baseUrl, onlySummary });
             core.info('Creating annotations');
             const annotations = (0, get_annotations_1.getAnnotations)(results, this.maxAnnotations);
@@ -400,7 +412,7 @@ class TestReporter {
             const conclusion = isFailed ? 'failure' : 'success';
             const icon = isFailed ? markdown_utils_1.Icon.fail : markdown_utils_1.Icon.success;
             core.info(`Updating check run conclusion (${conclusion}) and output`);
-            const resp = yield this.octokit.rest.checks.update(Object.assign({ check_run_id: createResp.data.id, conclusion, status: 'completed', output: {
+            const resp = yield this.octokit.rest.checks.update(Object.assign({ check_run_id: checkRun === null || checkRun === void 0 ? void 0 : checkRun.id, conclusion, status: 'completed', output: {
                     title: `${name} ${icon}`,
                     summary,
                     annotations
